@@ -15,9 +15,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <Annabell.h>
 #include <iostream>
 #include <vector>
-#include "sllm.h"
 #include "sizes.h"
 #include "interface.h"
 #include "rnd.h"
@@ -25,8 +25,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 using namespace sizes;
 
-sllm::sllm()
-{
+int Annabell::Init(AnnabellParams prm) {
+  param=prm;
+  flags = new AnnabellFlags();
   CudaFlag = false;
   W = new ssm(WSize);
   IW = new ssm(WMSize);
@@ -713,21 +714,21 @@ sllm::sllm()
   ElActfSt->K = 5; // K winners, K=5
 
   ElActfSt->SetSparseIn();
-  ElActfSt->SparseFC(CW);
-  ElActfSt->SparseFC(CW->Default, false); //
+  ElActfSt->SparseFC(CW, -param.CW_W, param.CW_W);
+  ElActfSt->SparseFC(CW->Default, -param.CW_W, param.CW_W, false); //
   ElActfSt->SparseFC(InI);
   ElActfSt->SparseFC(InI->Default, false); //
   ElActfSt->SparseFC(InEqW);
   ElActfSt->SparseFC(InEqWC); //
-  ElActfSt->SparseFC(InPhB,-3,3);
-  ElActfSt->SparseFC(InPhB->RowDefault, -3,3,false); //
+  ElActfSt->SparseFC(InPhB, -param.InPhB_W, param.InPhB_W);
+  ElActfSt->SparseFC(InPhB->RowDefault, -param.InPhB_W, param.InPhB_W, false); //
   ElActfSt->SparseFC(PhI);//ElActfSt->SparseFC(WkI);
   ElActfSt->SparseFC(PhI->Default, false);
   // ElActfSt->SparseFC(WkI->Default, false);
   ElActfSt->SparseFC(WkEqW);
   ElActfSt->SparseFC(WkEqWC); //
-  ElActfSt->SparseFC(WkPhB);
-  ElActfSt->SparseFC(WkPhB->RowDefault, false); //
+  ElActfSt->SparseFC(WkPhB, -param.WkPhB_W, param.WkPhB_W);
+  ElActfSt->SparseFC(WkPhB->RowDefault, -param.WkPhB_W, param.WkPhB_W, false); //
   ElActfSt->SparseFC(PrevWkPh);
   ElActfSt->SparseFC(PrevWkPh->RowDefault, false); //
   ElActfSt->SparseFC(WGI);
@@ -759,35 +760,15 @@ sllm::sllm()
   ElActfSt->SparseFC(PrevInEqWGW4);
   ElActfSt->SparseFC(PrevInEqWGW4C); //
 
-  ElActfSt->SparseFC(WkEqWGW1, -3, +3);
-  ElActfSt->SparseFC(WkEqWGW1C, -3, +3); //
-  ElActfSt->SparseFC(WkEqWGW2, -3, +3);
-  ElActfSt->SparseFC(WkEqWGW2C, -3, +3); //
-  ElActfSt->SparseFC(WkEqWGW3, -3, +3);
-  ElActfSt->SparseFC(WkEqWGW3C, -3, +3); //
-  ElActfSt->SparseFC(WkEqWGW4, -3, +3);
-  ElActfSt->SparseFC(WkEqWGW4C, -3, +3); //
-  // patch: repeat instead of using weight
-  /*
-  ElActfSt->SparseFC(WkEqWGW1);
-  ElActfSt->SparseFC(WkEqWGW1C); //
-  ElActfSt->SparseFC(WkEqWGW2);
-  ElActfSt->SparseFC(WkEqWGW2C); //
-  ElActfSt->SparseFC(WkEqWGW3);
-  ElActfSt->SparseFC(WkEqWGW3C); //
-  ElActfSt->SparseFC(WkEqWGW4);
-  ElActfSt->SparseFC(WkEqWGW4C); //
-
-  ElActfSt->SparseFC(WkEqWGW1);
-  ElActfSt->SparseFC(WkEqWGW1C); //
-  ElActfSt->SparseFC(WkEqWGW2);
-  ElActfSt->SparseFC(WkEqWGW2C); //
-  ElActfSt->SparseFC(WkEqWGW3);
-  ElActfSt->SparseFC(WkEqWGW3C); //
-  ElActfSt->SparseFC(WkEqWGW4);
-  ElActfSt->SparseFC(WkEqWGW4C); //
+  ElActfSt->SparseFC(WkEqWGW1, -param.WkEqWG_W, +param.WkEqWG_W);
+  ElActfSt->SparseFC(WkEqWGW1C, -param.WkEqWG_W, +param.WkEqWG_W); //
+  ElActfSt->SparseFC(WkEqWGW2, -param.WkEqWG_W, +param.WkEqWG_W);
+  ElActfSt->SparseFC(WkEqWGW2C, -param.WkEqWG_W, +param.WkEqWG_W); //
+  ElActfSt->SparseFC(WkEqWGW3, -param.WkEqWG_W, +param.WkEqWG_W);
+  ElActfSt->SparseFC(WkEqWGW3C, -param.WkEqWG_W, +param.WkEqWG_W); //
+  ElActfSt->SparseFC(WkEqWGW4, -param.WkEqWG_W, +param.WkEqWG_W);
+  ElActfSt->SparseFC(WkEqWGW4C, -param.WkEqWG_W, +param.WkEqWG_W); //
   //
-  */
   ElActfSt->SparseFC(PrevWkEqWGW1);
   ElActfSt->SparseFC(PrevWkEqWGW1C); //
   ElActfSt->SparseFC(PrevWkEqWGW2);
@@ -796,20 +777,12 @@ sllm::sllm()
   ElActfSt->SparseFC(PrevWkEqWGW3C); //
   ElActfSt->SparseFC(PrevWkEqWGW4);
   ElActfSt->SparseFC(PrevWkEqWGW4C); //
-  //ElActfSt->SparseFC(CW->Default, false);
-  //ElActfSt->SparseFC(InPhB->RowDefault, false);
-  //ElActfSt->SparseFC(WkPhB->RowDefault, false);
-  //ElActfSt->SparseFC(WGB->RowDefault, false);
-  ElActfSt->SparseFC(OutPhB);
-  ElActfSt->SparseFC(OutPhB->RowDefault,false);
+
+  ElActfSt->SparseFC(OutPhB, -param.OutPhB_W, param.OutPhB_W);
+  ElActfSt->SparseFC(OutPhB->RowDefault, -param.OutPhB_W,param.OutPhB_W, false);
   ElActfSt->SparseFC(OutEqW);
   ElActfSt->SparseFC(OutEqWC); //
-  //ElActfSt->SparseFC(OutPhB);
-  //ElActfSt->SparseFC(OutPhB->RowDefault, false);
-  //ElActfSt->SparseFC(OutPhB);
-  //ElActfSt->SparseFC(OutPhB->RowDefault, false);
-  //ElActfSt->SparseFC(OutPhB);
-  //ElActfSt->SparseFC(OutPhB->RowDefault, false);
+
   ElActfSt->SparseFC(WkOutPhB);
   ElActfSt->SparseFC(WkOutPhB->RowDefault, false);
   ElActfSt->SparseFC(WkOutEqWGW1);
@@ -825,80 +798,24 @@ sllm::sllm()
   ElActfSt->SparseFC(GoalWG->RowDefault,false); //
   ElActfSt->SparseFC(GoalPh);
   ElActfSt->SparseFC(GoalPh->RowDefault,false); //
-  ElActfSt->SparseFC(WkEqGoalWGW1, -5, 5);
-  ElActfSt->SparseFC(WkEqGoalWGW1C, -5, 5);
-  ElActfSt->SparseFC(WkEqGoalWGW2, -5, 5);
-  ElActfSt->SparseFC(WkEqGoalWGW2C, -5, 5);
-  ElActfSt->SparseFC(WkEqGoalWGW3, -5, 5);
-  ElActfSt->SparseFC(WkEqGoalWGW3C, -5, 5);
-  ElActfSt->SparseFC(WkEqGoalWGW4, -5, 5);
-  ElActfSt->SparseFC(WkEqGoalWGW4C, -5, 5);
+  ElActfSt->SparseFC(WkEqGoalWGW1, -param.WkEqGoalWG_W, param.WkEqGoalWG_W);
+  ElActfSt->SparseFC(WkEqGoalWGW1C, -param.WkEqGoalWG_W, param.WkEqGoalWG_W);
+  ElActfSt->SparseFC(WkEqGoalWGW2, -param.WkEqGoalWG_W, param.WkEqGoalWG_W);
+  ElActfSt->SparseFC(WkEqGoalWGW2C, -param.WkEqGoalWG_W, param.WkEqGoalWG_W);
+  ElActfSt->SparseFC(WkEqGoalWGW3, -param.WkEqGoalWG_W, param.WkEqGoalWG_W);
+  ElActfSt->SparseFC(WkEqGoalWGW3C, -param.WkEqGoalWG_W, param.WkEqGoalWG_W);
+  ElActfSt->SparseFC(WkEqGoalWGW4, -param.WkEqGoalWG_W, param.WkEqGoalWG_W);
+  ElActfSt->SparseFC(WkEqGoalWGW4C, -param.WkEqGoalWG_W, param.WkEqGoalWG_W);
 
-  // patch: repeat instead of using weight
-  /*
-  ElActfSt->SparseFC(WkEqGoalWGW1);
-  ElActfSt->SparseFC(WkEqGoalWGW1C);
-  ElActfSt->SparseFC(WkEqGoalWGW2);
-  ElActfSt->SparseFC(WkEqGoalWGW2C);
-  ElActfSt->SparseFC(WkEqGoalWGW3);
-  ElActfSt->SparseFC(WkEqGoalWGW3C);
-  ElActfSt->SparseFC(WkEqGoalWGW4);
-  ElActfSt->SparseFC(WkEqGoalWGW4C);
-
-  ElActfSt->SparseFC(WkEqGoalWGW1);
-  ElActfSt->SparseFC(WkEqGoalWGW1C);
-  ElActfSt->SparseFC(WkEqGoalWGW2);
-  ElActfSt->SparseFC(WkEqGoalWGW2C);
-  ElActfSt->SparseFC(WkEqGoalWGW3);
-  ElActfSt->SparseFC(WkEqGoalWGW3C);
-  ElActfSt->SparseFC(WkEqGoalWGW4);
-  ElActfSt->SparseFC(WkEqGoalWGW4C);
-  
-  ElActfSt->SparseFC(WkEqGoalWGW1);
-  ElActfSt->SparseFC(WkEqGoalWGW1C);
-  ElActfSt->SparseFC(WkEqGoalWGW2);
-  ElActfSt->SparseFC(WkEqGoalWGW2C);
-  ElActfSt->SparseFC(WkEqGoalWGW3);
-  ElActfSt->SparseFC(WkEqGoalWGW3C);
-  ElActfSt->SparseFC(WkEqGoalWGW4);
-  ElActfSt->SparseFC(WkEqGoalWGW4C);
-  
-  ElActfSt->SparseFC(WkEqGoalWGW1);
-  ElActfSt->SparseFC(WkEqGoalWGW1C);
-  ElActfSt->SparseFC(WkEqGoalWGW2);
-  ElActfSt->SparseFC(WkEqGoalWGW2C);
-  ElActfSt->SparseFC(WkEqGoalWGW3);
-  ElActfSt->SparseFC(WkEqGoalWGW3C);
-  ElActfSt->SparseFC(WkEqGoalWGW4);
-  ElActfSt->SparseFC(WkEqGoalWGW4C);
-  
-  ElActfSt->SparseFC(WkEqGoalWGW1);
-  ElActfSt->SparseFC(WkEqGoalWGW1C);
-  ElActfSt->SparseFC(WkEqGoalWGW2);
-  ElActfSt->SparseFC(WkEqGoalWGW2C);
-  ElActfSt->SparseFC(WkEqGoalWGW3);
-  ElActfSt->SparseFC(WkEqGoalWGW3C);
-  ElActfSt->SparseFC(WkEqGoalWGW4);
-  ElActfSt->SparseFC(WkEqGoalWGW4C);
-  */
-
-  //ElActfSt->SparseFC(WkEqGoalWGW1);
-  //ElActfSt->SparseFC(WkEqGoalWGW1C);
-  //ElActfSt->SparseFC(WkEqGoalWGW2);
-  //ElActfSt->SparseFC(WkEqGoalWGW2C);
-  //ElActfSt->SparseFC(WkEqGoalWGW3);
-  //ElActfSt->SparseFC(WkEqGoalWGW3C);
-  //ElActfSt->SparseFC(WkEqGoalWGW4);
-  //ElActfSt->SparseFC(WkEqGoalWGW4C);
   //  
-  ElActfSt->SparseFC(GoalPhEqGoalWGW1); //, -2, 2);
-  ElActfSt->SparseFC(GoalPhEqGoalWGW1C); //, -2, 2);
-  ElActfSt->SparseFC(GoalPhEqGoalWGW2); //, -2, 2);
-  ElActfSt->SparseFC(GoalPhEqGoalWGW2C); //, -2, 2);
-  ElActfSt->SparseFC(GoalPhEqGoalWGW3); //, -2, 2);
-  ElActfSt->SparseFC(GoalPhEqGoalWGW3C); //, -2, 2);
-  ElActfSt->SparseFC(GoalPhEqGoalWGW4); //, -2, 2);
-  ElActfSt->SparseFC(GoalPhEqGoalWGW4C); //, -2, 2);
+  ElActfSt->SparseFC(GoalPhEqGoalWGW1, -param.GoalPhEqGoalWG_W, param.GoalPhEqGoalWG_W);
+  ElActfSt->SparseFC(GoalPhEqGoalWGW1C, -param.GoalPhEqGoalWG_W, param.GoalPhEqGoalWG_W);
+  ElActfSt->SparseFC(GoalPhEqGoalWGW2, -param.GoalPhEqGoalWG_W, param.GoalPhEqGoalWG_W);
+  ElActfSt->SparseFC(GoalPhEqGoalWGW2C, -param.GoalPhEqGoalWG_W, param.GoalPhEqGoalWG_W);
+  ElActfSt->SparseFC(GoalPhEqGoalWGW3, -param.GoalPhEqGoalWG_W, param.GoalPhEqGoalWG_W);
+  ElActfSt->SparseFC(GoalPhEqGoalWGW3C, -param.GoalPhEqGoalWG_W, param.GoalPhEqGoalWG_W);
+  ElActfSt->SparseFC(GoalPhEqGoalWGW4, -param.GoalPhEqGoalWG_W, param.GoalPhEqGoalWG_W);
+  ElActfSt->SparseFC(GoalPhEqGoalWGW4C, -param.GoalPhEqGoalWG_W, param.GoalPhEqGoalWG_W);
 
   ElActfSt->SparseFC(GoalI);
   ElActfSt->SparseFC(GoalI->Default, false);
@@ -906,22 +823,9 @@ sllm::sllm()
 
   ElActfSt->SparseFC(ActFlags);
   ElActfSt->SparseFC(ActFlagsC); //
-  // connect to complementary SSMs
-  //ElActfSt->SparseFC(InEqWC);
-  //ElActfSt->SparseFC(WkEqWC);
-  //ElActfSt->SparseFC(WGEqWC);
-  //ElActfSt->SparseFC(InEqWGW1C);
-  //ElActfSt->SparseFC(InEqWGW2C);
-  //ElActfSt->SparseFC(InEqWGW3C);
-  //ElActfSt->SparseFC(InEqWGW4C);
-  //ElActfSt->SparseFC(WkEqWGW1C);
-  //ElActfSt->SparseFC(WkEqWGW2C);
-  //ElActfSt->SparseFC(WkEqWGW3C);
-  //ElActfSt->SparseFC(WkEqWGW4C);
-  //ElActfSt->SparseFC(ActFlagsC);
 
   ElActfSt->OutFC(ElActFL,0);
-  ElActfSt->UseDynamicBias(-500, 500);
+  ElActfSt->UseDynamicBias(-param.MaxDynamicBias_W, param.MaxDynamicBias_W);
   //ElAct->FC(RetrElActfSt, -BIGWG);
   SetNullElAct = new ssm(1);
   ElAct->FC(SetNullElAct, -BIGWG);
@@ -972,10 +876,6 @@ sllm::sllm()
   RetrStActI->SB(-1.5);
   StActI->SC(RetrStActI, 1);
   //CurrWkPh->FC(RetrStActIFlag, -BIGWG); it's enough to put CurrStActIFlag=0
-
-
-
-
 
   RetrStAct = new ssm(1);
   BuildStAct = new ssm(1);
@@ -1282,9 +1182,19 @@ sllm::sllm()
 
   AddRef();
   ElActfSt->OMPActivArrInit();
+
+  this->SetMode(NULL_MODE);
+
+  return 0;
 }
 
-int sllm::In(int *w, int *phi)
+int Annabell::SetMode(int imode) {
+  this->ModeFlags->Fill((int*)v_mode[imode]);
+
+  return 0;
+}
+
+int Annabell::In(int *w, int *phi)
 {
   W->Fill(w);
   PhI->Fill(phi);
@@ -1292,7 +1202,7 @@ int sllm::In(int *w, int *phi)
   return 0;
 }
 
-int sllm::PhUpdate()
+int Annabell::PhUpdate()
 {
   //level 10
   GetGoalPhFL->ActivOut();
@@ -1419,7 +1329,7 @@ int sllm::PhUpdate()
   return 0;
 }
 
-int sllm::AsUpdate()
+int Annabell::AsUpdate()
 {
   //level 19
   RemPh->Activ();
@@ -1431,7 +1341,7 @@ int sllm::AsUpdate()
   return 0;
 }
 
-int sllm::StActMemUpdate()
+int Annabell::StActMemUpdate()
 {
   CurrStoredStActI->ActivOut();
   StoredStActIFL->ActivOut();
@@ -1453,7 +1363,7 @@ int sllm::StActMemUpdate()
   return 0;
 }
 
-int sllm::ActUpdate()
+int Annabell::ActUpdate()
 {
   ActFlags->ActivOut();
   CurrPhI->ActivOut();
@@ -1466,7 +1376,7 @@ int sllm::ActUpdate()
   return 0;
 }
 
-int sllm::ElActfStUpdate()
+int Annabell::ElActfStUpdate()
 {
   // just to save time
   if (RetrElActfSt->Nr[0]->O<0.5 && BuildElActfSt->Nr[0]->O<0.5) return 0;
@@ -1571,7 +1481,7 @@ int sllm::ElActfStUpdate()
   return 0;
 }
 
-int sllm::MemPhUpdate()
+int Annabell::MemPhUpdate()
 {
   // level b11
   CurrMemPh->ActivOut();
@@ -1604,7 +1514,7 @@ int sllm::MemPhUpdate()
   return 0;
 }
 
-int sllm::Update()
+int Annabell::Update()
 {
   //TEMPORARY PATCH!!!!
   if (ElAct->Default->Nr[0]->O>0.5 && AcqAct->Default->Nr[0]->O>0.5) return 0;
@@ -1616,7 +1526,7 @@ int sllm::Update()
 }
 
 
-int sllm::StActRwdUpdate()
+int Annabell::StActRwdUpdate()
 {
   //RwdFlags->ActivOut();
   //StActMemUpdate();
@@ -1633,3 +1543,19 @@ int sllm::StActRwdUpdate()
   return 0;
 }
 
+int Annabell::SetAct(int acq_act, int el_act) {
+	this->AcqAct->Fill((int*) v_acq_act[acq_act]);
+	this->ElActFL->Fill((int*) v_el_act[el_act]);
+	this->ElAct->Fill((int*) v_el_act[el_act]);
+
+	return 0;
+}
+
+int Annabell::SetAct(int rwd_act, int acq_act, int el_act) {
+	this->RwdAct->Fill((int*) v_rwd_act[rwd_act]);
+	this->AcqAct->Fill((int*) v_acq_act[acq_act]);
+	this->ElActFL->Fill((int*) v_el_act[el_act]);
+	this->ElAct->Fill((int*) v_el_act[el_act]);
+
+	return 0;
+}

@@ -22,7 +22,7 @@ namespace sizes
 {
   const int PhSize=10;
   const int CSize=7;
-  const int NC=15;
+  const int NC=25;
   const int WSize=NC*CSize;
   const int WMSize=1000;
   const float Wgm=0.5;
